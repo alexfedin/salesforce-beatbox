@@ -1,6 +1,6 @@
-.idea
+/.idea
 
-venv/
+/venv/
 dist/
 src/beatbox.egg-info
 getstocks_beatbox.egg-info
