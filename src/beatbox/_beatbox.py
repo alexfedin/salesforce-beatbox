@@ -18,6 +18,7 @@ from xml.sax.xmlreader import AttributesNSImpl
 
 import xmltramp
 from xmltramp import islst
+from .headers_factory import SalesforceSoapHeader
 
 # global constants for namespace strings, used during serialization
 _partnerNs = "urn:partner.soap.sforce.com"
@@ -74,67 +75,85 @@ class Client:
 
     # set the batchSize property on the Client instance to change the batchsize for query/queryMore
     def query(self, soql):
-        return QueryRequest(self.__serverUrl, self.sessionId, self.batchSize, soql).post(self.__conn)
+        return QueryRequest(self.__serverUrl, self.sessionId, self.batchSize, soql).post(conn=self.__conn)
 
-    def queryMore(self, queryLocator):
-        return QueryMoreRequest(self.__serverUrl, self.sessionId, self.batchSize, queryLocator).post(self.__conn)
+    def queryMore(self, queryLocator, sf_headers=None):
+        return QueryMoreRequest(self.__serverUrl, self.sessionId, self.batchSize, queryLocator).post(conn=self.__conn,
+                                                                                                     sf_headers=sf_headers)
 
-    def search(self, sosl):
-        return SearchRequest(self.__serverUrl, self.sessionId, self.batchSize, sosl).post(self.__conn)
+    def search(self, sosl, sf_headers=None):
+        return SearchRequest(self.__serverUrl, self.sessionId, self.batchSize, sosl).post(conn=self.__conn,
+                                                                                          sf_headers=sf_headers)
 
-    def getUpdated(self, sObjectType, start, end):
-        return GetUpdatedRequest(self.__serverUrl, self.sessionId, sObjectType, start, end).post(self.__conn)
+    def getUpdated(self, sObjectType, start, end, sf_headers=None):
+        return GetUpdatedRequest(self.__serverUrl, self.sessionId, sObjectType, start, end).post(conn=self.__conn,
+                                                                                                 sf_headers=sf_headers)
 
-    def getDeleted(self, sObjectType, start, end):
-        return GetDeletedRequest(self.__serverUrl, self.sessionId, sObjectType, start, end).post(self.__conn)
+    def getDeleted(self, sObjectType, start, end, sf_headers=None):
+        return GetDeletedRequest(self.__serverUrl, self.sessionId, sObjectType, start, end).post(conn=self.__conn,
+                                                                                                 sf_headers=sf_headers)
 
-    def retrieve(self, fields, sObjectType, ids):
-        return RetrieveRequest(self.__serverUrl, self.sessionId, fields, sObjectType, ids).post(self.__conn)
+    def retrieve(self, fields, sObjectType, ids, sf_headers=None):
+        return RetrieveRequest(self.__serverUrl, self.sessionId, fields, sObjectType, ids).post(conn=self.__conn,
+                                                                                                sf_headers=sf_headers)
 
     # sObjects can be 1 or a list, returns a single save result or a list
-    def create(self, sObjects):
-        return CreateRequest(self.__serverUrl, self.sessionId, sObjects).post(self.__conn)
+    def create(self, sObjects, sf_headers=None):
+        return CreateRequest(self.__serverUrl, self.sessionId, sObjects).post(conn=self.__conn,
+                                                                              sf_headers=sf_headers)
 
     # sObjects can be 1 or a list, returns a single save result or a list
-    def update(self, sObjects):
-        return UpdateRequest(self.__serverUrl, self.sessionId, sObjects).post(self.__conn)
+    def update(self, sObjects, sf_headers=None):
+        return UpdateRequest(self.__serverUrl, self.sessionId, sObjects).post(conn=self.__conn,
+                                                                              sf_headers=sf_headers)
 
     # sObjects can be 1 or a list, returns a single upsert result or a list
-    def upsert(self, externalIdName, sObjects):
-        return UpsertRequest(self.__serverUrl, self.sessionId, externalIdName, sObjects).post(self.__conn)
+    def upsert(self, externalIdName, sObjects, sf_headers=None):
+        return UpsertRequest(self.__serverUrl, self.sessionId, externalIdName, sObjects).post(conn=self.__conn,
+                                                                                              sf_headers=sf_headers)
 
     # ids can be 1 or a list, returns a single delete result or a list
-    def delete(self, ids):
-        return DeleteRequest(self.__serverUrl, self.sessionId, ids).post(self.__conn)
+    def delete(self, ids, sf_headers=None):
+        return DeleteRequest(self.__serverUrl, self.sessionId, ids).post(self.__conn, sf_headers)
 
     # sObjectTypes can be 1 or a list, returns a single describe result or a list of them
-    def describeSObjects(self, sObjectTypes):
-        return DescribeSObjectsRequest(self.__serverUrl, self.sessionId, sObjectTypes).post(self.__conn)
+    def describeSObjects(self, sObjectTypes, sf_headers=None):
+        return DescribeSObjectsRequest(self.__serverUrl, self.sessionId, sObjectTypes).post(conn=self.__conn,
+                                                                                            sf_headers=sf_headers)
 
-    def describeGlobal(self):
-        return AuthenticatedRequest(self.__serverUrl, self.sessionId, "describeGlobal").post(self.__conn)
+    def describeGlobal(self, sf_headers=None):
+        return AuthenticatedRequest(self.__serverUrl, self.sessionId, "describeGlobal").post(conn=self.__conn,
+                                                                                             sf_headers=sf_headers)
 
-    def describeLayout(self, sObjectType):
-        return DescribeLayoutRequest(self.__serverUrl, self.sessionId, sObjectType).post(self.__conn)
+    def describeLayout(self, sObjectType, sf_headers=None):
+        return DescribeLayoutRequest(self.__serverUrl, self.sessionId, sObjectType).post(conn=self.__conn,
+                                                                                         sf_headers=sf_headers)
 
-    def describeTabs(self):
-        return AuthenticatedRequest(self.__serverUrl, self.sessionId, "describeTabs").post(self.__conn, True)
+    def describeTabs(self, sf_headers=None):
+        return AuthenticatedRequest(self.__serverUrl, self.sessionId, "describeTabs").post(conn=self.__conn,
+                                                                                           alwaysReturnList=True,
+                                                                                           sf_headers=sf_headers)
 
-    def getServerTimestamp(self):
-        return str(AuthenticatedRequest(self.__serverUrl, self.sessionId, "getServerTimestamp").post(self.__conn)[
+    def getServerTimestamp(self, sf_headers=None):
+        return str(AuthenticatedRequest(self.__serverUrl, self.sessionId, "getServerTimestamp").post(conn=self.__conn,
+                                                                                                     sf_headers=sf_headers)[
                        _tPartnerNS.timestamp])
 
-    def resetPassword(self, userId):
-        return ResetPasswordRequest(self.__serverUrl, self.sessionId, userId).post(self.__conn)
+    def resetPassword(self, userId, sf_headers=None):
+        return ResetPasswordRequest(self.__serverUrl, self.sessionId, userId).post(conn=self.__conn,
+                                                                                   sf_headers=sf_headers)
 
-    def setPassword(self, userId, password):
-        SetPasswordRequest(self.__serverUrl, self.sessionId, userId, password).post(self.__conn)
+    def setPassword(self, userId, password, sf_headers=None):
+        SetPasswordRequest(self.__serverUrl, self.sessionId, userId, password).post(conn=self.__conn,
+                                                                                    sf_headers=sf_headers)
 
-    def getUserInfo(self):
-        return AuthenticatedRequest(self.__serverUrl, self.sessionId, "getUserInfo").post(self.__conn)
+    def getUserInfo(self, sf_headers=None):
+        return AuthenticatedRequest(self.__serverUrl, self.sessionId, "getUserInfo").post(conn=self.__conn,
+                                                                                          sf_headers=sf_headers)
 
-    def convertLead(self, leadConverts):
-        return ConvertLeadRequest(self.__serverUrl, self.sessionId, leadConverts).post(self.__conn)
+    def convertLead(self, leadConverts, sf_headers=None):
+        return ConvertLeadRequest(self.__serverUrl, self.sessionId, leadConverts).post(conn=self.__conn,
+                                                                                       sf_headers=sf_headers)
 
 
 # fixed version of XmlGenerator, handles unqualified attributes correctly
@@ -274,7 +293,7 @@ class SoapEnvelope:
     def writeBody(self, writer):
         pass
 
-    def makeEnvelope(self):
+    def makeEnvelope(self, sf_headers):
         s = SoapWriter()
         s.startElement(_envNs, "Header")
         s.characters("\n")
@@ -283,16 +302,17 @@ class SoapEnvelope:
         s.endElement()
         s.characters("\n")
 
-        # add assignment rules and email notifications
-        s.startElement(_partnerNs, "AssignmentRuleHeader")
-        s.writeStringElement(_partnerNs, "useDefaultRule", 'true')
-        s.endElement()
-        s.characters("\n")
+        if sf_headers:
+            for header in sf_headers:
+                assert isinstance(header, SalesforceSoapHeader)
+                s.startElement(_partnerNs, header.name)
+                s.characters("\n")
 
-        s.startElement(_partnerNs, "EmailHeader")
-        s.writeStringElement(_partnerNs, "triggerUserEmail", 'true')
-        s.endElement()
-        s.characters("\n")
+                for element in header.elements:
+                    s.writeStringElement(_partnerNs, element.name, element.value)
+                    s.endElement()
+
+                s.characters("\n")
 
         self.writeHeaders(s)
         s.endElement()  # Header
@@ -311,7 +331,7 @@ class SoapEnvelope:
     #   checks for soap fault
     #   todo: check for mU='1' headers
     #   returns the relevant result from the body child
-    def post(self, conn=None, alwaysReturnList=False):
+    def post(self, conn=None, alwaysReturnList=False, sf_headers=None):
         logger.debug(self.__class__)
         headers = {
             "User-Agent": "BeatBox/" + __version__,
@@ -332,7 +352,7 @@ class SoapEnvelope:
                 if conn is None:
                     conn = makeConnection(scheme, host)
                     close = True
-                conn.request("POST", path, self.makeEnvelope(), headers)
+                conn.request("POST", path, self.makeEnvelope(sf_headers), headers)
                 response = conn.getresponse()
                 rawResponse = response.read()
             except (httplib.HTTPException, socket.error):

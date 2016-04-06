@@ -1,10 +1,11 @@
-from _beatbox import _tPartnerNS, _tSObjectNS
-from _beatbox import Client as BaseClient
-from marshall import marshall
-from types import TupleType, ListType
-from xmltramp import Namespace
 import copy
 import re
+from types import TupleType, ListType
+
+from _beatbox import Client as BaseClient
+from _beatbox import _tPartnerNS, _tSObjectNS
+from marshall import marshall
+from xmltramp import Namespace
 
 _tSchemaInstanceNS = Namespace('http://www.w3.org/2001/XMLSchema-instance')
 _tSchemaNS = Namespace('http://www.w3.org/2001/XMLSchema')
@@ -14,7 +15,6 @@ querytyperegx = re.compile('(?:from|FROM) (\S+)')
 
 
 class QueryRecord(dict):
-
     def __getattr__(self, n):
         try:
             return self[n]
@@ -26,7 +26,6 @@ class QueryRecord(dict):
 
 
 class QueryRecordSet(list):
-
     def __init__(self, records, done, size, **kw):
         for r in records:
             self.append(r)
@@ -50,7 +49,6 @@ class QueryRecordSet(list):
 
 
 class SObject(object):
-
     def __init__(self, **kw):
         for k, v in kw.items():
             setattr(self, k, v)
@@ -64,7 +62,6 @@ class SObject(object):
 
 
 class Client(BaseClient):
-
     cacheTypeDescriptions = False
 
     def __init__(self, serverUrl=None, cacheTypeDescriptions=False):
@@ -88,8 +85,8 @@ class Client(BaseClient):
             return True
         return False
 
-    def describeGlobal(self):
-        res = BaseClient.describeGlobal(self)
+    def describeGlobal(self, headers=None):
+        res = BaseClient.describeGlobal(self, headers)
         data = dict()
         data['encoding'] = str(res[_tPartnerNS.encoding])
         data['maxBatchSize'] = int(str(res[_tPartnerNS.maxBatchSize]))
@@ -130,8 +127,8 @@ class Client(BaseClient):
             data['types'] = [s.name for s in data['sobjects']]
         return data
 
-    def describeSObjects(self, sObjectTypes):
-        res = BaseClient.describeSObjects(self, sObjectTypes)
+    def describeSObjects(self, sObjectTypes, headers=None):
+        res = BaseClient.describeSObjects(self, sObjectTypes, headers)
         if type(res) not in (TupleType, ListType):
             res = [res]
         data = list()
@@ -182,9 +179,9 @@ class Client(BaseClient):
             data.append(SObject(**d))
         return data
 
-    def create(self, sObjects):
+    def create(self, sObjects, headers=None):
         preparedObjects = _prepareSObjects(sObjects)
-        res = BaseClient.create(self, preparedObjects)
+        res = BaseClient.create(self, preparedObjects, headers)
         if type(res) not in (TupleType, ListType):
             res = [res]
         data = list()
@@ -200,8 +197,8 @@ class Client(BaseClient):
                 d['errors'] = list()
         return data
 
-    def retrieve(self, fields, sObjectType, ids):
-        resultSet = BaseClient.retrieve(self, fields, sObjectType, ids)
+    def retrieve(self, fields, sObjectType, ids, headers=None):
+        resultSet = BaseClient.retrieve(self, fields, sObjectType, ids, headers)
         type_data = self.describeSObjects(sObjectType)[0]
 
         if type(resultSet) not in (TupleType, ListType):
@@ -218,9 +215,9 @@ class Client(BaseClient):
                 d[fname] = type_data.marshall(fname, result)
         return data
 
-    def update(self, sObjects):
+    def update(self, sObjects, headers=None):
         preparedObjects = _prepareSObjects(sObjects)
-        res = BaseClient.update(self, preparedObjects)
+        res = BaseClient.update(self, preparedObjects, headers)
         if type(res) not in (TupleType, ListType):
             res = [res]
         data = list()
@@ -259,7 +256,7 @@ class Client(BaseClient):
                         records=[self._extractRecord(rec) for rec in field[_tPartnerNS.records:]],
                         done=field[_tPartnerNS.done],
                         size=int(str(field[_tPartnerNS.size]))
-                        )
+                    )
                 else:
                     record[fname] = type_data.marshall(fname, r)
         return record
@@ -282,7 +279,7 @@ class Client(BaseClient):
 
         res = BaseClient.query(self, queryString)
         # calculate the union of the sets of record types from each record
-        types = reduce(lambda a, b: a|b, [getRecordTypes(r) for r in res[_tPartnerNS.records:]], set())
+        types = reduce(lambda a, b: a | b, [getRecordTypes(r) for r in res[_tPartnerNS.records:]], set())
         if not self.cacheTypeDescriptions:
             self.flushTypeDescriptionsCache()
         new_types = types - set(self.typeDescs.keys())
@@ -310,8 +307,8 @@ class Client(BaseClient):
             queryLocator=str(res[_tPartnerNS.queryLocator]))
         return data
 
-    def search(self, sosl):
-        res = BaseClient.search(self, sosl)
+    def search(self, sosl, headers=None):
+        res = BaseClient.search(self, sosl, headers)
 
         if not self.cacheTypeDescriptions:
             self.flushTypeDescriptionsCache()
@@ -329,8 +326,8 @@ class Client(BaseClient):
         else:
             return []
 
-    def delete(self, ids):
-        res = BaseClient.delete(self, ids)
+    def delete(self, ids, headers=None):
+        res = BaseClient.delete(self, ids, headers)
         if type(res) not in (TupleType, ListType):
             res = [res]
         data = list()
@@ -346,9 +343,9 @@ class Client(BaseClient):
                 d['errors'] = list()
         return data
 
-    def upsert(self, externalIdName, sObjects):
+    def upsert(self, externalIdName, sObjects, headers=None):
         preparedObjects = _prepareSObjects(sObjects)
-        res = BaseClient.upsert(self, externalIdName, preparedObjects)
+        res = BaseClient.upsert(self, externalIdName, preparedObjects, headers)
         if type(res) not in (TupleType, ListType):
             res = [res]
         data = list()
@@ -365,8 +362,8 @@ class Client(BaseClient):
             d['isCreated'] = d['created'] = _bool(r[_tPartnerNS.created])
         return data
 
-    def getDeleted(self, sObjectType, start, end):
-        res = BaseClient.getDeleted(self, sObjectType, start, end)
+    def getDeleted(self, sObjectType, start, end, headers=None):
+        res = BaseClient.getDeleted(self, sObjectType, start, end, headers)
         res = res[_tPartnerNS.deletedRecords:]
         if type(res) not in (TupleType, ListType):
             res = [res]
@@ -376,24 +373,24 @@ class Client(BaseClient):
                 id=str(r[_tPartnerNS.id]),
                 deletedDate=marshall(
                     'datetime', 'deletedDate', r, ns=_tPartnerNS)
-                )
+            )
             data.append(d)
         return data
 
-    def getUpdated(self, sObjectType, start, end):
-        res = BaseClient.getUpdated(self, sObjectType, start, end)
+    def getUpdated(self, sObjectType, start, end, headers=None):
+        res = BaseClient.getUpdated(self, sObjectType, start, end, headers)
         res = res[_tPartnerNS.ids:]
         if type(res) not in (TupleType, ListType):
             res = [res]
         return [str(r) for r in res]
 
-    def getUserInfo(self):
-        res = BaseClient.getUserInfo(self)
+    def getUserInfo(self, headers=None):
+        res = BaseClient.getUserInfo(self, headers)
         data = _extractUserInfo(res)
         return data
 
-    def describeTabs(self):
-        res = BaseClient.describeTabs(self)
+    def describeTabs(self, headers=None):
+        res = BaseClient.describeTabs(self, headers)
         data = list()
         for r in res:
             tabs = [_extractTab(t) for t in r[_tPartnerNS.tabs:]]
@@ -410,7 +407,6 @@ class Client(BaseClient):
 
 
 class Field(object):
-
     def __init__(self, **kw):
         for k, v in kw.items():
             setattr(self, k, v)
@@ -595,5 +591,6 @@ def getRecordTypes(xml):
             if isObject(field):
                 record_types.update(getRecordTypes(field))
             elif isQueryResult(field):
-                record_types.update(reduce(lambda x, y: x | y, [getRecordTypes(r) for r in field[_tPartnerNS.records:]]))
+                record_types.update(
+                    reduce(lambda x, y: x | y, [getRecordTypes(r) for r in field[_tPartnerNS.records:]]))
     return record_types

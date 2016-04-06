@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='getstocks-beatbox',
+setup(name='gs-beatbox',
       version='32.1.3',  # be sure to update the version in _beatbox.py too
       package_dir={'': 'src'},
       packages=['beatbox'],
